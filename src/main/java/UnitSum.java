@@ -19,6 +19,26 @@ public class UnitSum {
 
             //input format: toPage\t unitMultiplication
             //target: pass to reducer
+            String[] pageSubRank = value.toString().split("\t");
+            double subRank = Double.parseDouble(pageSubRank[1]);
+            context.write(new Text(pageSubRank[0]), new Text(pageSubRank[1]));
+        }
+    }
+
+    // apply teleporting to solve deadend and spider trap
+    public static class BetaMapper extends Mapper<Object, Text, Text, DoubleWritable>{
+        float beta;
+        @Override
+        public void setup(Context context){
+            Configuration conf = context.getConfiguration();
+            beta = conf.getFloat("beta", 0.2f);
+        }
+
+        @Override
+        public void map(Object key, Text value, Context context) throws  IOException, InterruptException{
+            String[] pageRank = value.toString().split("\t");
+            double betaRank = Double.parseDouble(pageRank[1]) * beta;
+            context.write(new Text(pageRank[0]), new DoubleWritable(betaRank));
         }
     }
 
@@ -30,6 +50,13 @@ public class UnitSum {
 
            //input key = toPage value = <unitMultiplication>
             //target: sum!
+            double sum = 0;
+            for(DoubleWritable val: values){
+                sum += value.get();
+            }
+            DecimalFormat df = new DecimalFormat("#.0000");
+            sum = Double.valueOf(df.format(sum));
+            context.write(key, new DoubleWritable(sum));
         }
     }
 
